@@ -1,14 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { ALL_TIERS, ALL_STAGES } from '../lib/tiers'
 import { getAllSignals, addCustomSignal } from '../lib/signals'
-
-const SECTORS = [
-  'Enterprise AI', 'AI Dev Tools', 'AI Search', 'AI Video', 'AI Audio / Voice',
-  'Foundation Models', 'Data Infrastructure', 'Fintech', 'Fraud Prevention',
-  'Legal AI', 'HealthTech AI', 'WealthTech', 'HR Tech', 'Travel & Expense',
-  'E-commerce', 'Security / Cybersecurity', 'Developer Tools', 'Other',
-]
+import { getAllSectors, getAllStageLabels, getAllTierLabels } from '../lib/filterConfig'
 
 export default function AddDealModal({ onAdd, onClose }) {
   const { user, displayName, workspaceId } = useAuth()
@@ -112,7 +105,7 @@ export default function AddDealModal({ onAdd, onClose }) {
               <select value={form.sector} onChange={e => set('sector', e.target.value)}
                 className="w-full bg-th-hover border border-th-bd rounded-lg px-3 py-2 text-[13px] text-th-tx focus:outline-none focus:border-th-bd-str">
                 <option value="">Select sector</option>
-                {SECTORS.map(s => <option key={s}>{s}</option>)}
+                {getAllSectors().map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
@@ -120,7 +113,7 @@ export default function AddDealModal({ onAdd, onClose }) {
               <select value={form.stage} onChange={e => set('stage', e.target.value)}
                 className="w-full bg-th-hover border border-th-bd rounded-lg px-3 py-2 text-[13px] text-th-tx focus:outline-none focus:border-th-bd-str">
                 <option value="">Select stage</option>
-                {ALL_STAGES.map(s => <option key={s}>{s}</option>)}
+                {getAllStageLabels().map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
           </div>
@@ -149,7 +142,7 @@ export default function AddDealModal({ onAdd, onClose }) {
               <label className="block text-[11px] font-medium text-th-tx3 mb-1">Lead Tier</label>
               <select value={form.lead_tier} onChange={e => set('lead_tier', e.target.value)}
                 className="w-full bg-th-hover border border-th-bd rounded-lg px-3 py-2 text-[13px] text-th-tx focus:outline-none focus:border-th-bd-str">
-                {ALL_TIERS.map(t => <option key={t}>{t}</option>)}
+                {getAllTierLabels().map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
           </div>

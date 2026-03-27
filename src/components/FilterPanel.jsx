@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { ALL_TIERS, ALL_STAGES, TIER_DEFINITIONS, STAGE_DEFINITIONS } from '../lib/tiers'
+import { TIER_DEFINITIONS, STAGE_DEFINITIONS } from '../lib/tiers'
 import { getAllSignals, addCustomSignal, removeCustomSignal } from '../lib/signals'
+import {
+  getAllSectors, getCustomSectors, addCustomSector, removeCustomSector,
+  getAllStageLabels, getCustomStages, addCustomStage, removeCustomStage,
+  getAllTierLabels, getCustomTiers, addCustomTier, removeCustomTier,
+} from '../lib/filterConfig'
 
 const FOUNDER_SIGNALS = [
   'Top University', 'Deep Technical', 'Prior VC-backed',
@@ -115,11 +120,29 @@ function filtersEqual(a, b) {
 }
 
 export default function FilterPanel({ open, onClose, filters, onChange, deals }) {
-  const sectors = [...new Set(deals.map(d => d.sector))].sort()
-
   const [signalList, setSignalList] = useState(() => getAllSignals())
   const [newSignalInput, setNewSignalInput] = useState('')
   const [showSignalManager, setShowSignalManager] = useState(false)
+
+  const [sectorList, setSectorList] = useState(() => getAllSectors())
+  const [newSectorInput, setNewSectorInput] = useState('')
+  const [showSectorManager, setShowSectorManager] = useState(false)
+
+  const [stageList, setStageList] = useState(() => getAllStageLabels())
+  const [newStageInput, setNewStageInput] = useState('')
+  const [showStageManager, setShowStageManager] = useState(false)
+
+  const [tierList, setTierList] = useState(() => getAllTierLabels())
+  const [newTierInput, setNewTierInput] = useState('')
+  const [showTierManager, setShowTierManager] = useState(false)
+
+  const customSectors = getCustomSectors()
+  const customStages = getCustomStages()
+  const customTiers = getCustomTiers()
+
+  // Sectors visible in filter chips: master list items that appear in deals, plus any active filters
+  const dealsectorSet = new Set(deals.map(d => d.sector))
+  const filterSectors = sectorList.filter(s => dealsectorSet.has(s) || filters.sectors.includes(s))
 
   const handleAddSignal = () => {
     const label = newSignalInput.trim()
@@ -235,58 +258,160 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
           {/* Sector */}
           <div>
-            <div className="flex items-center mb-2">
-              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Sector</div>
-              <InfoTooltip text="Filter by the company's primary market or industry vertical. AI-adjacent sectors (Enterprise AI, AI Dev Tools, etc.) map to ICONIQ's core thesis focus areas." />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Sector</div>
+                <InfoTooltip text="Filter by the company's primary market or industry vertical. Add custom sectors to track your own thesis areas." />
+              </div>
+              <button onClick={() => setShowSectorManager(s => !s)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">
+                {showSectorManager ? 'Done' : 'Manage'}
+              </button>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {sectors.map(s => (
-                <ChipToggle key={s} label={s} active={filters.sectors.includes(s)}
-                  onClick={() => onChange({ ...filters, sectors: toggle(filters.sectors, s) })} />
-              ))}
-            </div>
+            {showSectorManager ? (
+              <div className="space-y-2">
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                  {sectorList.map(s => (
+                    <div key={s} className="flex items-center gap-2 py-1.5 border-b border-th-bd-sub last:border-0">
+                      <span className="flex-1 text-[12px] text-th-tx">{s}</span>
+                      {customSectors.includes(s) ? (
+                        <button onClick={() => { removeCustomSector(s); setSectorList(getAllSectors()) }} className="text-th-tx4 hover:text-red-500 transition-colors flex-shrink-0">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-th-tx4">Default</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <input value={newSectorInput} onChange={e => setNewSectorInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { addCustomSector(newSectorInput.trim()); setSectorList(getAllSectors()); setNewSectorInput('') } }}
+                    placeholder="New sector..." className="flex-1 bg-th-surface border border-th-bd rounded-lg px-3 py-1.5 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str" />
+                  <button onClick={() => { addCustomSector(newSectorInput.trim()); setSectorList(getAllSectors()); setNewSectorInput('') }} className="px-3 py-1.5 rounded-lg bg-th-tx text-th-surface text-[12px] font-medium hover:opacity-90 transition-opacity">Add</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {filterSectors.map(s => (
+                  <ChipToggle key={s} label={s} active={filters.sectors.includes(s)}
+                    onClick={() => onChange({ ...filters, sectors: toggle(filters.sectors, s) })} />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Stage */}
           <div>
-            <div className="flex items-center mb-2">
-              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Stage</div>
-              <InfoTooltip text="Funding stage. ICONIQ Growth focuses on Series B through Pre-IPO. Hover the info icon on individual stages in the deal drawer to see ARR benchmarks for each stage." />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Stage</div>
+                <InfoTooltip text="Funding stage. ICONIQ Growth focuses on Series B through Pre-IPO. Hover any stage chip for ARR benchmarks." />
+              </div>
+              <button onClick={() => setShowStageManager(s => !s)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">
+                {showStageManager ? 'Done' : 'Manage'}
+              </button>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {ALL_STAGES.map(s => (
-                <div key={s} className="relative group">
-                  <ChipToggle label={s} active={filters.stages.includes(s)}
-                    onClick={() => onChange({ ...filters, stages: toggle(filters.stages, s) })} />
-                  <div className="absolute bottom-full left-0 mb-1.5 z-50 w-56 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover:block pointer-events-none">
-                    <div className="font-medium text-th-tx mb-0.5">{s}</div>
-                    <div className="text-th-tx3">{STAGE_DEFINITIONS[s]?.arr_range}</div>
-                    <div className="mt-1">{STAGE_DEFINITIONS[s]?.description}</div>
-                  </div>
+            {showStageManager ? (
+              <div className="space-y-2">
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                  {stageList.map(s => (
+                    <div key={s} className="flex items-start gap-2 py-1.5 border-b border-th-bd-sub last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-medium text-th-tx">{s}</div>
+                        {STAGE_DEFINITIONS[s] && <div className="text-[11px] text-th-tx4 mt-0.5 leading-snug">{STAGE_DEFINITIONS[s].arr_range} · {STAGE_DEFINITIONS[s].description}</div>}
+                        {!STAGE_DEFINITIONS[s] && <div className="text-[11px] text-th-tx4 mt-0.5">Custom stage</div>}
+                      </div>
+                      {customStages.includes(s) ? (
+                        <button onClick={() => { removeCustomStage(s); setStageList(getAllStageLabels()) }} className="text-th-tx4 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-th-tx4 flex-shrink-0 mt-0.5">Default</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                <div className="flex gap-2 pt-1">
+                  <input value={newStageInput} onChange={e => setNewStageInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { addCustomStage(newStageInput.trim()); setStageList(getAllStageLabels()); setNewStageInput('') } }}
+                    placeholder="New stage..." className="flex-1 bg-th-surface border border-th-bd rounded-lg px-3 py-1.5 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str" />
+                  <button onClick={() => { addCustomStage(newStageInput.trim()); setStageList(getAllStageLabels()); setNewStageInput('') }} className="px-3 py-1.5 rounded-lg bg-th-tx text-th-surface text-[12px] font-medium hover:opacity-90 transition-opacity">Add</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {stageList.map(s => (
+                  <div key={s} className="relative group">
+                    <ChipToggle label={s} active={filters.stages.includes(s)}
+                      onClick={() => onChange({ ...filters, stages: toggle(filters.stages, s) })} />
+                    {STAGE_DEFINITIONS[s] && (
+                      <div className="absolute bottom-full left-0 mb-1.5 z-50 w-56 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover:block pointer-events-none">
+                        <div className="font-medium text-th-tx mb-0.5">{s}</div>
+                        <div className="text-th-tx3">{STAGE_DEFINITIONS[s].arr_range}</div>
+                        <div className="mt-1">{STAGE_DEFINITIONS[s].description}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Lead Tier */}
           <div>
-            <div className="flex items-center mb-2">
-              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Lead Tier</div>
-              <InfoTooltip text="Quality tier of the lead investor. Tier 1 (Sequoia, a16z, Benchmark etc.) is the strongest market signal. Growth Equity (General Atlantic, Silver Lake, ICONIQ) signals late-stage maturity." />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Lead Tier</div>
+                <InfoTooltip text="Quality tier of the lead investor. Hover any tier chip to see definition and example firms." />
+              </div>
+              <button onClick={() => setShowTierManager(s => !s)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">
+                {showTierManager ? 'Done' : 'Manage'}
+              </button>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {ALL_TIERS.map(t => (
-                <div key={t} className="relative group">
-                  <ChipToggle label={t} active={filters.leadTiers.includes(t)}
-                    onClick={() => onChange({ ...filters, leadTiers: toggle(filters.leadTiers, t) })} />
-                  <div className="absolute bottom-full left-0 mb-1.5 z-50 w-64 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover:block pointer-events-none">
-                    <div className="font-medium text-th-tx mb-0.5">{TIER_DEFINITIONS[t]?.label}</div>
-                    <div className="mb-1">{TIER_DEFINITIONS[t]?.description}</div>
-                    <div className="text-th-tx4 text-[10px]">{TIER_DEFINITIONS[t]?.examples?.slice(0, 4).join(', ')}</div>
-                  </div>
+            {showTierManager ? (
+              <div className="space-y-2">
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                  {tierList.map(t => (
+                    <div key={t} className="flex items-start gap-2 py-1.5 border-b border-th-bd-sub last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-medium text-th-tx">{TIER_DEFINITIONS[t]?.label || t}</div>
+                        {TIER_DEFINITIONS[t] && <div className="text-[11px] text-th-tx4 mt-0.5 leading-snug">{TIER_DEFINITIONS[t].description}</div>}
+                        {!TIER_DEFINITIONS[t] && <div className="text-[11px] text-th-tx4 mt-0.5">Custom tier</div>}
+                      </div>
+                      {customTiers.includes(t) ? (
+                        <button onClick={() => { removeCustomTier(t); setTierList(getAllTierLabels()) }} className="text-th-tx4 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5">
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-th-tx4 flex-shrink-0 mt-0.5">Default</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                <div className="flex gap-2 pt-1">
+                  <input value={newTierInput} onChange={e => setNewTierInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { addCustomTier(newTierInput.trim()); setTierList(getAllTierLabels()); setNewTierInput('') } }}
+                    placeholder="New tier..." className="flex-1 bg-th-surface border border-th-bd rounded-lg px-3 py-1.5 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str" />
+                  <button onClick={() => { addCustomTier(newTierInput.trim()); setTierList(getAllTierLabels()); setNewTierInput('') }} className="px-3 py-1.5 rounded-lg bg-th-tx text-th-surface text-[12px] font-medium hover:opacity-90 transition-opacity">Add</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {tierList.map(t => (
+                  <div key={t} className="relative group">
+                    <ChipToggle label={t} active={filters.leadTiers.includes(t)}
+                      onClick={() => onChange({ ...filters, leadTiers: toggle(filters.leadTiers, t) })} />
+                    {TIER_DEFINITIONS[t] && (
+                      <div className="absolute bottom-full left-0 mb-1.5 z-50 w-64 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover:block pointer-events-none">
+                        <div className="font-medium text-th-tx mb-0.5">{TIER_DEFINITIONS[t].label}</div>
+                        <div className="mb-1">{TIER_DEFINITIONS[t].description}</div>
+                        <div className="text-th-tx4 text-[10px]">{TIER_DEFINITIONS[t].examples?.slice(0, 4).join(', ')}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Founder Signals */}
