@@ -77,15 +77,15 @@ export default function MemoGenerator({ deal }) {
     return (
       <div>
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider">AI Deal Memo</div>
+          <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">AI Deal Memo</div>
           <button
             onClick={() => setMemo('')}
-            className="text-[11px] text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+            className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors"
           >
             Regenerate
           </button>
         </div>
-        <div className="space-y-3 text-[13px] text-[#a1a1aa] leading-relaxed">
+        <div className="space-y-3 text-[13px] text-th-tx2 leading-relaxed">
           {memo.split('\n\n').filter(Boolean).map((para, i) => (
             <p key={i}>{para}</p>
           ))}
@@ -96,18 +96,18 @@ export default function MemoGenerator({ deal }) {
 
   return (
     <div>
-      <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-3">AI Deal Memo</div>
+      <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider mb-3">AI Deal Memo</div>
       {error && (
-        <div className="mb-3 text-[12px] text-red-400">{error}</div>
+        <div className="mb-3 text-[12px] text-red-600 dark:text-red-400">{error}</div>
       )}
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#1e1e22] border border-[#2a2a2e] text-[13px] font-medium text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#3a3a3f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+        className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-th-hover border border-th-bd text-[13px] font-medium text-th-tx2 hover:text-th-tx hover:border-th-bd-str transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
       >
         {loading ? (
           <>
-            <svg className="animate-spin w-4 h-4 text-[#a855f7]" viewBox="0 0 24 24" fill="none">
+            <svg className="animate-spin w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round"/>
             </svg>
             Generating memo...
@@ -121,7 +121,7 @@ export default function MemoGenerator({ deal }) {
           </>
         )}
       </button>
-      <p className="mt-2 text-[11px] text-[#52525b] text-center">
+      <p className="mt-2 text-[11px] text-th-tx4 text-center">
         Uses Claude to write a 3-paragraph IC-ready memo
       </p>
     </div>

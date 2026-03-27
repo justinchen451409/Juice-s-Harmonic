@@ -1,32 +1,25 @@
 import { useState, useEffect } from 'react'
 import { THESIS_SYSTEM_PROMPT } from '../lib/portfolio'
 
-const STATUS_COLORS = {
-  'Private': 'bg-zinc-800 text-zinc-300',
-  'Public': 'bg-emerald-950 text-emerald-300',
-  'Acquired': 'bg-blue-950 text-blue-300',
-  'Fully Realized': 'bg-purple-950 text-purple-300',
-}
-
 function statusColor(status) {
-  if (status?.includes('Public')) return 'bg-emerald-950 text-emerald-300'
-  if (status?.includes('Acquired')) return 'bg-blue-950 text-blue-300'
-  if (status?.includes('Realized')) return 'bg-purple-950 text-purple-300'
-  return 'bg-zinc-800 text-zinc-300'
+  if (status?.includes('Public')) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+  if (status?.includes('Acquired')) return 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+  if (status?.includes('Realized')) return 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+  return 'bg-th-hover text-th-tx3'
 }
 
 function moicColor(moic) {
-  if (moic >= 3) return 'text-emerald-300'
-  if (moic >= 1.5) return 'text-blue-300'
-  if (moic < 1) return 'text-red-400'
-  return 'text-[#f4f4f5]'
+  if (moic >= 3) return 'text-emerald-600 dark:text-emerald-300'
+  if (moic >= 1.5) return 'text-blue-600 dark:text-blue-300'
+  if (moic < 1) return 'text-red-500 dark:text-red-400'
+  return 'text-th-tx'
 }
 
 function MetricCard({ label, value, highlight }) {
   return (
-    <div className="bg-[#18181b] border border-[#2a2a2e] rounded-lg p-3">
-      <div className="text-[10px] font-medium text-[#52525b] uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-[14px] font-semibold ${highlight || 'text-[#f4f4f5]'}`}>{value || '—'}</div>
+    <div className="bg-th-surface border border-th-bd rounded-lg p-3">
+      <div className="text-[10px] font-medium text-th-tx4 uppercase tracking-wider mb-1">{label}</div>
+      <div className={`text-[14px] font-semibold ${highlight || 'text-th-tx'}`}>{value || '—'}</div>
     </div>
   )
 }
@@ -102,23 +95,23 @@ function ProfileSection({ text }) {
     <div className="space-y-5">
       {sections.map((section, i) => {
         const headerMatch = section.match(/^\*\*(.+?)\*\*\n?([\s\S]*)/)
-        if (!headerMatch) return <p key={i} className="text-[13px] text-[#a1a1aa] leading-relaxed">{section}</p>
+        if (!headerMatch) return <p key={i} className="text-[13px] text-th-tx2 leading-relaxed">{section}</p>
         const [, header, body] = headerMatch
         const isBullets = body.includes('\n-') || body.trimStart().startsWith('-') || body.includes('\n•') || body.trimStart().startsWith('•')
         return (
           <div key={i}>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">{header}</div>
+            <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider mb-2">{header}</div>
             {isBullets ? (
               <ul className="space-y-1">
                 {body.split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('•')).map((line, j) => (
-                  <li key={j} className="flex gap-2 text-[13px] text-[#a1a1aa] leading-relaxed">
-                    <span className="text-[#52525b] mt-0.5 flex-shrink-0">·</span>
+                  <li key={j} className="flex gap-2 text-[13px] text-th-tx2 leading-relaxed">
+                    <span className="text-th-tx4 mt-0.5 flex-shrink-0">·</span>
                     <span>{line.replace(/^[-•]\s*/, '')}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-[13px] text-[#a1a1aa] leading-relaxed">{body.trim()}</p>
+              <p className="text-[13px] text-th-tx2 leading-relaxed">{body.trim()}</p>
             )}
           </div>
         )
@@ -153,33 +146,33 @@ export default function PortfolioDrawer({ company: co, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-      <div className="fixed top-0 right-0 h-full w-[500px] z-50 bg-[#111113] border-l border-[#2a2a2e] flex flex-col shadow-2xl">
+      <div className="fixed inset-0 z-40 bg-black/30 dark:bg-black/50" onClick={onClose} />
+      <div className="fixed top-0 right-0 h-full w-[500px] z-50 bg-th-panel border-l border-th-bd-sub flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-start justify-between px-5 py-4 border-b border-[#2a2a2e] flex-shrink-0">
+        <div className="flex items-start justify-between px-5 py-4 border-b border-th-bd-sub flex-shrink-0">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#27272b] flex items-center justify-center text-[13px] font-bold text-[#71717a] flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-th-active flex items-center justify-center text-[13px] font-bold text-th-tx3 flex-shrink-0">
               {co.company.slice(0, 2).toUpperCase()}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-[16px] font-semibold text-[#f4f4f5]">{co.company}</h2>
+                <h2 className="text-[16px] font-semibold text-th-tx">{co.company}</h2>
                 {co.isp7_new && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-950 border border-amber-900 text-amber-300 font-medium">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-900 dark:text-amber-300 font-medium">
                     ISP VII New
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-[12px] text-[#71717a]">{co.sector}</span>
-                <span className="text-[#3a3a3f]">·</span>
+                <span className="text-[12px] text-th-tx3">{co.sector}</span>
+                <span className="text-th-bd">·</span>
                 <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusColor(co.status)}`}>
                   {co.status}
                 </span>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="text-[#52525b] hover:text-[#f4f4f5] transition-colors mt-1">
+          <button onClick={onClose} className="text-th-tx4 hover:text-th-tx transition-colors mt-1">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
@@ -189,7 +182,7 @@ export default function PortfolioDrawer({ company: co, onClose }) {
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
           {/* Metrics */}
           <div>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">ISP VII Position</div>
+            <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider mb-2">ISP VII Position</div>
             <div className="grid grid-cols-3 gap-2">
               <MetricCard label="Invested" value={`$${co.invested_m}M`} />
               <MetricCard label="FMV" value={`$${co.fmv_m}M`} />
@@ -200,7 +193,7 @@ export default function PortfolioDrawer({ company: co, onClose }) {
             </div>
             {co.realized_m && (
               <div className="mt-2">
-                <MetricCard label="Realized" value={`$${co.realized_m}M`} highlight="text-emerald-300" />
+                <MetricCard label="Realized" value={`$${co.realized_m}M`} highlight="text-emerald-600 dark:text-emerald-300" />
               </div>
             )}
           </div>
@@ -208,19 +201,19 @@ export default function PortfolioDrawer({ company: co, onClose }) {
           {/* Known description */}
           {co.description && !profile && (
             <div>
-              <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Overview</div>
-              <p className="text-[13px] text-[#a1a1aa] leading-relaxed">{co.description}</p>
+              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider mb-2">Overview</div>
+              <p className="text-[13px] text-th-tx2 leading-relaxed">{co.description}</p>
             </div>
           )}
 
           {/* Recent developments */}
           {co.developments?.length > 0 && !profile && (
             <div>
-              <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Recent Developments</div>
+              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider mb-2">Recent Developments</div>
               <ul className="space-y-1.5">
                 {co.developments.map((d, i) => (
-                  <li key={i} className="flex gap-2 text-[13px] text-[#a1a1aa]">
-                    <span className="text-[#52525b] mt-0.5 flex-shrink-0">·</span>
+                  <li key={i} className="flex gap-2 text-[13px] text-th-tx2">
+                    <span className="text-th-tx4 mt-0.5 flex-shrink-0">·</span>
                     <span>{d}</span>
                   </li>
                 ))}
@@ -230,10 +223,10 @@ export default function PortfolioDrawer({ company: co, onClose }) {
 
           {/* AI-generated profile */}
           {profile && (
-            <div className="border-t border-[#2a2a2e] pt-4">
+            <div className="border-t border-th-bd-sub pt-4">
               <div className="flex items-center justify-between mb-4">
-                <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider">AI Profile</div>
-                <button onClick={() => setProfile(null)} className="text-[11px] text-[#52525b] hover:text-[#a1a1aa] transition-colors">
+                <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">AI Profile</div>
+                <button onClick={() => setProfile(null)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">
                   Regenerate
                 </button>
               </div>
@@ -243,16 +236,16 @@ export default function PortfolioDrawer({ company: co, onClose }) {
 
           {/* Generate button */}
           {!profile && (
-            <div className="border-t border-[#2a2a2e] pt-4">
-              {error && <div className="mb-3 text-[12px] text-red-400">{error}</div>}
+            <div className="border-t border-th-bd-sub pt-4">
+              {error && <div className="mb-3 text-[12px] text-red-600 dark:text-red-400">{error}</div>}
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="flex items-center gap-2 w-full justify-center px-4 py-2.5 rounded-lg bg-[#1e1e22] border border-[#2a2a2e] text-[13px] font-medium text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#3a3a3f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 w-full justify-center px-4 py-2.5 rounded-lg bg-th-hover border border-th-bd text-[13px] font-medium text-th-tx2 hover:text-th-tx hover:border-th-bd-str transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin w-4 h-4 text-[#a855f7]" viewBox="0 0 24 24" fill="none">
+                    <svg className="animate-spin w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round"/>
                     </svg>
                     Generating profile...
@@ -266,7 +259,7 @@ export default function PortfolioDrawer({ company: co, onClose }) {
                   </>
                 )}
               </button>
-              <p className="mt-2 text-[11px] text-[#52525b] text-center">
+              <p className="mt-2 text-[11px] text-th-tx4 text-center">
                 Claude writes a full overview, team, competitive landscape, and risks
               </p>
             </div>

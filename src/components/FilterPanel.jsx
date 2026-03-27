@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { ALL_TIERS, ALL_STAGES, TIER_DEFINITIONS, STAGE_DEFINITIONS } from '../lib/tiers'
 
 const FOUNDER_SIGNALS = [
   'Top University', 'Deep Technical', 'Prior VC-backed',
@@ -11,7 +12,6 @@ const PIPELINE_OPTIONS = [
   { value: 'untracked', label: 'Untracked' },
 ]
 
-// Sequoia-style and ICONIQ-style suggested presets
 const DEFAULT_PRESETS = [
   {
     id: 'category-leaders',
@@ -69,12 +69,37 @@ function ChipToggle({ label, active, onClick }) {
       onClick={onClick}
       className={`px-2.5 py-1 rounded-md text-[12px] font-medium border transition-colors ${
         active
-          ? 'bg-blue-950 text-blue-300 border-blue-800'
-          : 'bg-[#1e1e22] text-[#a1a1aa] border-[#2a2a2e] hover:border-[#3a3a3f] hover:text-[#f4f4f5]'
+          ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800'
+          : 'bg-th-hover text-th-tx2 border-th-bd hover:border-th-bd-str hover:text-th-tx'
       }`}
     >
       {label}
     </button>
+  )
+}
+
+function InfoTooltip({ text }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative inline-block">
+      <button
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        className="text-th-tx4 hover:text-th-tx2 transition-colors ml-1"
+      >
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2"/>
+          <path d="M7 6.5v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+      </button>
+      {show && (
+        <div className="absolute left-5 top-0 z-50 w-64 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2.5 text-[11px] text-th-tx2 leading-relaxed pointer-events-none">
+          {text}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -90,7 +115,6 @@ function filtersEqual(a, b) {
 
 export default function FilterPanel({ open, onClose, filters, onChange, deals }) {
   const sectors = [...new Set(deals.map(d => d.sector))].sort()
-  const stages = [...new Set(deals.map(d => d.stage))].sort()
 
   const [customPresets, setCustomPresets] = useState(() => {
     try { return JSON.parse(localStorage.getItem('scout_presets') || '[]') } catch { return [] }
@@ -99,9 +123,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
   const [showSaveInput, setShowSaveInput] = useState(false)
 
   const allPresets = [...DEFAULT_PRESETS, ...customPresets]
-
   const activePreset = allPresets.find(p => filtersEqual(p.filters, filters))
-
   const activeCount = Object.values(filters).reduce((n, arr) => n + arr.length, 0)
 
   const applyPreset = (preset) => {
@@ -132,24 +154,24 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose} />}
+      {open && <div className="fixed inset-0 z-30 bg-black/20 dark:bg-black/40" onClick={onClose} />}
 
-      <div className={`fixed top-0 right-0 h-full w-[340px] z-40 bg-[#111113] border-l border-[#2a2a2e] flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-[340px] z-40 bg-th-panel border-l border-th-bd-sub flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2e] flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-th-bd-sub flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-[14px] font-semibold text-[#f4f4f5]">Filters</span>
+            <span className="text-[14px] font-semibold text-th-tx">Filters</span>
             {activeCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-blue-900 text-blue-300 text-[11px] font-medium">{activeCount}</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[11px] font-medium">{activeCount}</span>
             )}
           </div>
           <div className="flex items-center gap-3">
             {activeCount > 0 && (
-              <button onClick={() => onChange(EMPTY_FILTERS)} className="text-[12px] text-[#71717a] hover:text-[#a1a1aa] transition-colors">
+              <button onClick={() => onChange(EMPTY_FILTERS)} className="text-[12px] text-th-tx3 hover:text-th-tx transition-colors">
                 Clear all
               </button>
             )}
-            <button onClick={onClose} className="text-[#71717a] hover:text-[#f4f4f5] transition-colors">
+            <button onClick={onClose} className="text-th-tx3 hover:text-th-tx transition-colors">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
@@ -158,9 +180,9 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-          {/* Preset filters */}
+          {/* Presets */}
           <div>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Presets</div>
+            <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider mb-2">Presets</div>
             <div className="space-y-1.5">
               {allPresets.map(preset => (
                 <div key={preset.id} className="flex items-center gap-2">
@@ -168,8 +190,8 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
                     onClick={() => activePreset?.id === preset.id ? onChange(EMPTY_FILTERS) : applyPreset(preset)}
                     className={`flex-1 text-left px-3 py-2 rounded-lg border text-[12px] transition-colors ${
                       activePreset?.id === preset.id
-                        ? 'bg-blue-950 border-blue-800 text-blue-200'
-                        : 'bg-[#18181b] border-[#2a2a2e] text-[#a1a1aa] hover:border-[#3a3a3f] hover:text-[#f4f4f5]'
+                        ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-200'
+                        : 'bg-th-surface border-th-bd text-th-tx2 hover:border-th-bd-str hover:text-th-tx'
                     }`}
                   >
                     <div className="font-medium leading-tight">{preset.name}</div>
@@ -178,7 +200,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
                   {preset.custom && (
                     <button
                       onClick={() => deletePreset(preset.id)}
-                      className="text-[#3a3a3f] hover:text-red-400 transition-colors flex-shrink-0"
+                      className="text-th-bd-str hover:text-red-500 transition-colors flex-shrink-0"
                     >
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -190,11 +212,14 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
             </div>
           </div>
 
-          <div className="border-t border-[#2a2a2e]" />
+          <div className="border-t border-th-bd-sub" />
 
           {/* Sector */}
           <div>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Sector</div>
+            <div className="flex items-center mb-2">
+              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Sector</div>
+              <InfoTooltip text="Filter by the company's primary market or industry vertical. AI-adjacent sectors (Enterprise AI, AI Dev Tools, etc.) map to ICONIQ's core thesis focus areas." />
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {sectors.map(s => (
                 <ChipToggle key={s} label={s} active={filters.sectors.includes(s)}
@@ -205,29 +230,52 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
           {/* Stage */}
           <div>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Stage</div>
+            <div className="flex items-center mb-2">
+              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Stage</div>
+              <InfoTooltip text="Funding stage. ICONIQ Growth focuses on Series B through Pre-IPO. Hover the info icon on individual stages in the deal drawer to see ARR benchmarks for each stage." />
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              {stages.map(s => (
-                <ChipToggle key={s} label={s} active={filters.stages.includes(s)}
-                  onClick={() => onChange({ ...filters, stages: toggle(filters.stages, s) })} />
+              {ALL_STAGES.map(s => (
+                <div key={s} className="relative group">
+                  <ChipToggle label={s} active={filters.stages.includes(s)}
+                    onClick={() => onChange({ ...filters, stages: toggle(filters.stages, s) })} />
+                  <div className="absolute bottom-full left-0 mb-1.5 z-50 w-56 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover:block pointer-events-none">
+                    <div className="font-medium text-th-tx mb-0.5">{s}</div>
+                    <div className="text-th-tx3">{STAGE_DEFINITIONS[s]?.arr_range}</div>
+                    <div className="mt-1">{STAGE_DEFINITIONS[s]?.description}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Lead Tier */}
           <div>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Lead Tier</div>
-            <div className="flex gap-1.5">
-              {['Tier 1', 'Tier 2'].map(t => (
-                <ChipToggle key={t} label={t} active={filters.leadTiers.includes(t)}
-                  onClick={() => onChange({ ...filters, leadTiers: toggle(filters.leadTiers, t) })} />
+            <div className="flex items-center mb-2">
+              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Lead Tier</div>
+              <InfoTooltip text="Quality tier of the lead investor. Tier 1 (Sequoia, a16z, Benchmark etc.) is the strongest market signal. Growth Equity (General Atlantic, Silver Lake, ICONIQ) signals late-stage maturity." />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_TIERS.map(t => (
+                <div key={t} className="relative group">
+                  <ChipToggle label={t} active={filters.leadTiers.includes(t)}
+                    onClick={() => onChange({ ...filters, leadTiers: toggle(filters.leadTiers, t) })} />
+                  <div className="absolute bottom-full left-0 mb-1.5 z-50 w-64 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover:block pointer-events-none">
+                    <div className="font-medium text-th-tx mb-0.5">{TIER_DEFINITIONS[t]?.label}</div>
+                    <div className="mb-1">{TIER_DEFINITIONS[t]?.description}</div>
+                    <div className="text-th-tx4 text-[10px]">{TIER_DEFINITIONS[t]?.examples?.slice(0, 4).join(', ')}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Founder Signals */}
           <div>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Founder Signals</div>
+            <div className="flex items-center mb-2">
+              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Founder Signals</div>
+              <InfoTooltip text="Filter by founder background. 'Deep Technical' = AI lab / PhD / top research org. 'Prior Exit' = sold a company. 'Top University' = MIT, Stanford, CMU, Oxford, etc. Signal quality varies — context matters." />
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {FOUNDER_SIGNALS.map(s => (
                 <ChipToggle key={s} label={s} active={filters.founderSignals.includes(s)}
@@ -238,7 +286,10 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
           {/* Pipeline Status */}
           <div>
-            <div className="text-[11px] font-medium text-[#71717a] uppercase tracking-wider mb-2">Pipeline Status</div>
+            <div className="flex items-center mb-2">
+              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Pipeline Status</div>
+              <InfoTooltip text="Filter by your action state. 'Tracked' = you've flagged this deal for follow-up. 'Passed' = decided not to pursue. 'Untracked' = needs a decision." />
+            </div>
             <div className="flex gap-1.5">
               {PIPELINE_OPTIONS.map(opt => (
                 <ChipToggle key={opt.value} label={opt.label} active={filters.pipeline.includes(opt.value)}
@@ -247,9 +298,9 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
             </div>
           </div>
 
-          {/* Save current filter as preset */}
+          {/* Save current filter */}
           {activeCount > 0 && !activePreset && (
-            <div className="border-t border-[#2a2a2e] pt-4">
+            <div className="border-t border-th-bd-sub pt-4">
               {showSaveInput ? (
                 <div className="flex gap-2">
                   <input
@@ -258,19 +309,19 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
                     onKeyDown={e => e.key === 'Enter' && savePreset()}
                     placeholder="Preset name..."
                     autoFocus
-                    className="flex-1 bg-[#18181b] border border-[#3a3a3f] rounded-lg px-3 py-1.5 text-[12px] text-[#f4f4f5] placeholder-[#3a3a3f] focus:outline-none"
+                    className="flex-1 bg-th-surface border border-th-bd-str rounded-lg px-3 py-1.5 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none"
                   />
-                  <button onClick={savePreset} className="px-3 py-1.5 rounded-lg bg-blue-900 text-blue-200 text-[12px] font-medium hover:bg-blue-800 transition-colors">
+                  <button onClick={savePreset} className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-[12px] font-medium hover:bg-blue-700 transition-colors">
                     Save
                   </button>
-                  <button onClick={() => setShowSaveInput(false)} className="text-[#52525b] hover:text-[#a1a1aa] transition-colors px-1">
+                  <button onClick={() => setShowSaveInput(false)} className="text-th-tx4 hover:text-th-tx2 transition-colors px-1">
                     ✕
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => setShowSaveInput(true)}
-                  className="w-full py-2 rounded-lg border border-dashed border-[#2a2a2e] text-[12px] text-[#52525b] hover:text-[#a1a1aa] hover:border-[#3a3a3f] transition-colors"
+                  className="w-full py-2 rounded-lg border border-dashed border-th-bd text-[12px] text-th-tx4 hover:text-th-tx2 hover:border-th-bd-str transition-colors"
                 >
                   + Save current filters as preset
                 </button>

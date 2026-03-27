@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { THESIS_SYSTEM_PROMPT, ISP7_RECENT } from '../lib/portfolio'
+import { THESIS_SYSTEM_PROMPT } from '../lib/portfolio'
+import { useAuth } from '../contexts/AuthContext'
 
 const SUGGESTED = [
   'Series B+ AI companies with Databricks or Anthropic synergy',
@@ -19,9 +20,9 @@ function SparkleIcon({ size = 16 }) {
   )
 }
 
-async function askClaude(messages, deals) {
+async function askClaude(messages, deals, crmNotes = []) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('Add VITE_ANTHROPIC_API_KEY to your .env file to use AI features.')
+  if (!apiKey) throw new Error('Add VITE_ANTHROPIC_API_KEY to your .env file to use Ask CJ.')
 
   const dealsContext = JSON.stringify(
     deals.map(d => ({
@@ -33,16 +34,23 @@ async function askClaude(messages, deals) {
     }))
   )
 
+  const crmContext = crmNotes.length > 0
+    ? `\n\nCRM NOTES (private notes from the user):\n${crmNotes.map(n =>
+        `[${n.company || 'General'}] ${n.source ? `(${n.source}) ` : ''}${n.content}`
+      ).join('\n\n')}`
+    : ''
+
   const systemPrompt = `${THESIS_SYSTEM_PROMPT}
 
-You are helping an ICONIQ Growth associate analyze deal flow. You have access to their current deal pipeline:
+You are CJ, an AI assistant helping an ICONIQ Growth associate analyze deal flow. You have access to their current deal pipeline${crmNotes.length > 0 ? ' and their private CRM notes' : ''}:
 
 CURRENT DEALS:
-${dealsContext}
+${dealsContext}${crmContext}
 
 When answering:
 - Be direct and specific. No filler. Write like a growth equity analyst.
 - Reference specific companies and data points from the deal list.
+- If the user references their CRM notes, use that context to give a more informed response.
 - If the question is about filtering/finding deals, end your response with a JSON block on its own line in this exact format: FILTER_IDS:["id1","id2"] — list only matching deal IDs, or FILTER_IDS:[] if none match.
 - If the question is conversational (not about filtering), do NOT include a FILTER_IDS block.
 - Use numbers and percentages where available.`
@@ -82,7 +90,7 @@ function parseResponse(text) {
 function UserBubble({ content }) {
   return (
     <div className="flex justify-end mb-6">
-      <div className="max-w-[75%] bg-[#1e1e22] border border-[#2a2a2e] rounded-2xl rounded-tr-sm px-4 py-3 text-[14px] text-[#f4f4f5] leading-relaxed">
+      <div className="max-w-[75%] bg-th-hover border border-th-bd rounded-2xl rounded-tr-sm px-4 py-3 text-[14px] text-th-tx leading-relaxed">
         {content}
       </div>
     </div>
@@ -99,7 +107,7 @@ function AssistantBubble({ content, filteredIds, onApplyFilter }) {
       <div className="flex-1 min-w-0">
         <div className="space-y-3">
           {paragraphs.map((p, i) => (
-            <p key={i} className="text-[14px] text-[#d4d4d8] leading-relaxed">
+            <p key={i} className="text-[14px] text-th-tx2 leading-relaxed">
               {p.split('\n').map((line, j) => (
                 <span key={j}>{line}{j < p.split('\n').length - 1 && <br/>}</span>
               ))}
@@ -110,7 +118,7 @@ function AssistantBubble({ content, filteredIds, onApplyFilter }) {
           <div className="mt-4 flex items-center gap-3">
             <button
               onClick={() => onApplyFilter(filteredIds)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-950 border border-purple-800 text-purple-300 text-[12px] font-medium hover:bg-purple-900 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-100 border border-purple-200 text-purple-700 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-300 text-[12px] font-medium hover:opacity-90 transition-opacity"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -118,7 +126,7 @@ function AssistantBubble({ content, filteredIds, onApplyFilter }) {
               View {filteredIds.length} deal{filteredIds.length !== 1 ? 's' : ''} in Scout
             </button>
             {filteredIds.length === 0 && (
-              <span className="text-[12px] text-[#52525b]">No matching deals in current pipeline</span>
+              <span className="text-[12px] text-th-tx4">No matching deals in current pipeline</span>
             )}
           </div>
         )}
@@ -127,13 +135,13 @@ function AssistantBubble({ content, filteredIds, onApplyFilter }) {
   )
 }
 
-export default function AIQueryTab({ deals, onApplyFilter }) {
+export default function AIQueryTab({ deals, onApplyFilter, crmNotes = [] }) {
+  const { isGuest } = useAuth()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const bottomRef = useRef(null)
-  const inputRef = useRef(null)
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -152,7 +160,7 @@ export default function AIQueryTab({ deals, onApplyFilter }) {
     setLoading(true)
 
     try {
-      const raw = await askClaude(updatedMessages, deals)
+      const raw = await askClaude(updatedMessages, deals, crmNotes)
       const { display, filteredIds } = parseResponse(raw)
       setMessages(prev => [...prev, { role: 'assistant', content: display, filteredIds }])
     } catch (e) {
@@ -180,28 +188,27 @@ export default function AIQueryTab({ deals, onApplyFilter }) {
   const isEmpty = messages.length === 0
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0a0b]">
+    <div className="flex flex-col h-full bg-th-bg">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
         {isEmpty ? (
-          // Welcome screen
           <div className="flex flex-col items-center justify-center h-full px-6 pb-24">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-purple-900 flex items-center justify-center mb-6">
               <SparkleIcon size={22} />
             </div>
-            <h2 className="text-[22px] font-semibold text-[#f4f4f5] mb-2 text-center">
-              Ask about your deal pipeline
+            <h2 className="text-[22px] font-semibold text-th-tx mb-2 text-center">
+              Ask CJ about your pipeline
             </h2>
-            <p className="text-[14px] text-[#71717a] text-center max-w-[440px] mb-10 leading-relaxed">
-              I know your full pipeline, ICONIQ's investment thesis, and the ISP VII portfolio.
-              Ask me to find deals, explain fit, or compare companies.
+            <p className="text-[14px] text-th-tx3 text-center max-w-[440px] mb-10 leading-relaxed">
+              CJ knows your full pipeline, ICONIQ's investment thesis, ISP VII portfolio data
+              {crmNotes.length > 0 ? ', and your CRM notes' : ''}. Ask anything.
             </p>
             <div className="grid grid-cols-2 gap-2 w-full max-w-[560px]">
               {SUGGESTED.map(q => (
                 <button
                   key={q}
                   onClick={() => handleSubmit(q)}
-                  className="text-left px-4 py-3 rounded-xl bg-[#18181b] border border-[#2a2a2e] text-[13px] text-[#a1a1aa] hover:text-[#f4f4f5] hover:border-[#3a3a3f] hover:bg-[#1e1e22] transition-all leading-snug"
+                  className="text-left px-4 py-3 rounded-xl bg-th-surface border border-th-bd text-[13px] text-th-tx2 hover:text-th-tx hover:border-th-bd-str hover:bg-th-hover transition-all leading-snug"
                 >
                   {q}
                 </button>
@@ -235,7 +242,7 @@ export default function AIQueryTab({ deals, onApplyFilter }) {
               </div>
             )}
             {error && (
-              <div className="mb-4 px-4 py-3 rounded-xl bg-red-950 border border-red-900 text-[13px] text-red-300">
+              <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-[13px] text-red-700 dark:bg-red-950 dark:border-red-900 dark:text-red-300">
                 {error}
               </div>
             )}
@@ -250,12 +257,12 @@ export default function AIQueryTab({ deals, onApplyFilter }) {
           {!isEmpty && (
             <button
               onClick={() => setMessages([])}
-              className="mb-3 text-[12px] text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+              className="mb-3 text-[12px] text-th-tx4 hover:text-th-tx2 transition-colors"
             >
               New conversation
             </button>
           )}
-          <div className="relative bg-[#18181b] border border-[#3a3a3f] rounded-2xl focus-within:border-[#52525b] transition-colors">
+          <div className="relative bg-th-surface border border-th-bd rounded-2xl focus-within:border-th-bd-str transition-colors">
             <textarea
               ref={textareaRef}
               value={input}
@@ -263,15 +270,15 @@ export default function AIQueryTab({ deals, onApplyFilter }) {
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about your deal pipeline..."
               rows={1}
-              className="w-full bg-transparent px-4 pt-3.5 pb-12 text-[14px] text-[#f4f4f5] placeholder-[#3a3a3f] focus:outline-none resize-none leading-relaxed"
+              className="w-full bg-transparent px-4 pt-3.5 pb-12 text-[14px] text-th-tx placeholder-th-tx4 focus:outline-none resize-none leading-relaxed"
               style={{ minHeight: '52px', maxHeight: '200px' }}
             />
             <div className="absolute bottom-3 left-4 right-3 flex items-center justify-between pointer-events-none">
-              <span className="text-[11px] text-[#3a3a3f]">Press Enter to send · Shift+Enter for new line</span>
+              <span className="text-[11px] text-th-tx4">Press Enter to send · Shift+Enter for new line</span>
               <button
                 onClick={() => handleSubmit()}
                 disabled={loading || !input.trim()}
-                className="pointer-events-auto w-8 h-8 rounded-lg bg-[#6d28d9] flex items-center justify-center disabled:opacity-30 hover:bg-[#7c3aed] transition-colors"
+                className="pointer-events-auto w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center disabled:opacity-30 hover:bg-purple-700 transition-colors"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M7 12V2M2 7l5-5 5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -279,6 +286,11 @@ export default function AIQueryTab({ deals, onApplyFilter }) {
               </button>
             </div>
           </div>
+          {crmNotes.length > 0 && (
+            <p className="mt-2 text-[11px] text-th-tx4 text-center">
+              CJ has access to {crmNotes.length} CRM note{crmNotes.length !== 1 ? 's' : ''} for context
+            </p>
+          )}
         </div>
       </div>
     </div>
