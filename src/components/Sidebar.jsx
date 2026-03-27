@@ -5,6 +5,7 @@ export default function Sidebar({
   trackedCount,
   totalCount,
   onOpenFilters,
+  activeTab,
 }) {
   const pct = totalCount > 0 ? Math.round((trackedCount / totalCount) * 100) : 0
 
@@ -38,24 +39,30 @@ export default function Sidebar({
         <div className="mt-1.5 text-[11px] text-[#52525b]">deals tracked vs. total</div>
       </div>
 
-      {/* Saved searches */}
+      {/* Saved searches — only shown on Scout tab */}
       <div className="flex-1 overflow-y-auto py-3">
         <div className="px-4 mb-2 text-[11px] font-medium text-[#71717a] uppercase tracking-wider">
-          Saved Searches
+          {activeTab === 'portfolio' ? 'Portfolio Views' : 'Saved Searches'}
         </div>
-        {savedSearches.map(search => (
-          <button
-            key={search}
-            onClick={() => onSearchSelect(search)}
-            className={`w-full text-left px-4 py-1.5 text-[13px] transition-colors duration-100 rounded-none ${
-              activeSearch === search
-                ? 'bg-[#1e1e22] text-[#f4f4f5] font-medium'
-                : 'text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-[#1a1a1e]'
-            }`}
-          >
-            {search}
-          </button>
-        ))}
+        {activeTab === 'portfolio' ? (
+          <div className="px-4 py-2 text-[12px] text-[#52525b]">
+            ISP VII companies sorted by MOIC, FMV, or date. Click any row for Claude-generated profile.
+          </div>
+        ) : (
+          savedSearches.map(search => (
+            <button
+              key={search}
+              onClick={() => onSearchSelect(search)}
+              className={`w-full text-left px-4 py-1.5 text-[13px] transition-colors duration-100 rounded-none ${
+                activeSearch === search && activeTab === 'scout'
+                  ? 'bg-[#1e1e22] text-[#f4f4f5] font-medium'
+                  : 'text-[#a1a1aa] hover:text-[#f4f4f5] hover:bg-[#1a1a1e]'
+              }`}
+            >
+              {search}
+            </button>
+          ))
+        )}
       </div>
 
       {/* Bottom nav */}
