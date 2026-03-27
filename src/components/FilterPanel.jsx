@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TIER_DEFINITIONS, STAGE_DEFINITIONS } from '../lib/tiers'
-import { getAllSignals, addCustomSignal, removeCustomSignal } from '../lib/signals'
+import { getAllSignals, addCustomSignal, removeCustomSignal, editSignalDescription, resetSignalDescription } from '../lib/signals'
 import {
   getAllSectors, getCustomSectors, addCustomSector, removeCustomSector,
   getAllStageLabels, getCustomStages, addCustomStage, removeCustomStage,
@@ -123,6 +123,25 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
   const [signalList, setSignalList] = useState(() => getAllSignals())
   const [newSignalInput, setNewSignalInput] = useState('')
   const [showSignalManager, setShowSignalManager] = useState(false)
+  const [editingSignal, setEditingSignal] = useState(null)
+  const [editingDesc, setEditingDesc] = useState('')
+
+  const handleStartEdit = (signal) => {
+    setEditingSignal(signal.label)
+    setEditingDesc(signal.description)
+  }
+  const handleSaveEdit = () => {
+    if (!editingSignal) return
+    editSignalDescription(editingSignal, editingDesc.trim())
+    setSignalList(getAllSignals())
+    setEditingSignal(null)
+    setEditingDesc('')
+  }
+  const handleResetDesc = (label) => {
+    resetSignalDescription(label)
+    setSignalList(getAllSignals())
+    if (editingSignal === label) { setEditingSignal(null); setEditingDesc('') }
+  }
 
   const [sectorList, setSectorList] = useState(() => getAllSectors())
   const [newSectorInput, setNewSectorInput] = useState('')
@@ -445,22 +464,48 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
             {showSignalManager ? (
               <div className="space-y-2">
-                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-0 max-h-64 overflow-y-auto pr-1">
                   {signalList.map(s => (
-                    <div key={s.label} className="flex items-start gap-2 py-1.5 border-b border-th-bd-sub last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
-                        <div className="text-[11px] text-th-tx4 leading-snug mt-0.5">{s.description}</div>
-                      </div>
-                      {s.custom && (
-                        <button
-                          onClick={() => handleRemoveSignal(s.label)}
-                          className="text-th-tx4 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5"
-                        >
-                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                            <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                          </svg>
-                        </button>
+                    <div key={s.label} className="py-2 border-b border-th-bd-sub last:border-0">
+                      {editingSignal === s.label ? (
+                        <div className="space-y-1.5">
+                          <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
+                          <textarea
+                            value={editingDesc}
+                            onChange={e => setEditingDesc(e.target.value)}
+                            rows={3}
+                            autoFocus
+                            className="w-full bg-th-surface border border-th-bd-str rounded-lg px-2.5 py-2 text-[11px] text-th-tx placeholder-th-tx4 focus:outline-none resize-none"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button onClick={handleSaveEdit} className="px-2.5 py-1 rounded-md bg-th-tx text-th-surface text-[11px] font-medium hover:opacity-90 transition-opacity">Save</button>
+                            <button onClick={() => { setEditingSignal(null); setEditingDesc('') }} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">Cancel</button>
+                            {!s.custom && (
+                              <button onClick={() => handleResetDesc(s.label)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors ml-auto">Reset to default</button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
+                            <div className="text-[11px] text-th-tx4 leading-snug mt-0.5">{s.description}</div>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                            <button onClick={() => handleStartEdit(s)} className="text-th-tx4 hover:text-th-tx2 transition-colors" title="Edit definition">
+                              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                                <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            {s.custom && (
+                              <button onClick={() => handleRemoveSignal(s.label)} className="text-th-tx4 hover:text-red-500 transition-colors" title="Remove signal">
+                                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                                  <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
                   ))}
