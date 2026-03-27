@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { ALL_TIERS } from '../lib/tiers'
-import { ALL_STAGES } from '../lib/tiers'
+import { ALL_TIERS, ALL_STAGES } from '../lib/tiers'
+import { getAllSignals, addCustomSignal } from '../lib/signals'
 
 const SECTORS = [
   'Enterprise AI', 'AI Dev Tools', 'AI Search', 'AI Video', 'AI Audio / Voice',
@@ -13,13 +13,31 @@ const SECTORS = [
 export default function AddDealModal({ onAdd, onClose }) {
   const { user, displayName, workspaceId } = useAuth()
   const [form, setForm] = useState({
-    company: '', domain: '', sector: '', stage: '', amount_m: '',
+    company: '', domain: '', sector: '', stage: '', amount_m: '', valuation_m: '',
     lead_investor: '', lead_tier: 'Tier 1', date: new Date().toISOString().split('T')[0],
-    description: '', signals: '', source: '', notes: '',
+    description: '', source: '', notes: '',
   })
+  const [selectedSignals, setSelectedSignals] = useState([])
+  const [customSignalInput, setCustomSignalInput] = useState('')
+  const [signals, setSignals] = useState(() => getAllSignals())
   const [error, setError] = useState(null)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const toggleSignal = (label) => {
+    setSelectedSignals(prev =>
+      prev.includes(label) ? prev.filter(s => s !== label) : [...prev, label]
+    )
+  }
+
+  const handleAddCustomSignal = () => {
+    const label = customSignalInput.trim()
+    if (!label) return
+    addCustomSignal(label)
+    setSignals(getAllSignals())
+    setSelectedSignals(prev => prev.includes(label) ? prev : [...prev, label])
+    setCustomSignalInput('')
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -34,11 +52,12 @@ export default function AddDealModal({ onAdd, onClose }) {
       sector: form.sector,
       stage: form.stage,
       amount_m: form.amount_m ? parseFloat(form.amount_m) : null,
+      valuation_m: form.valuation_m ? parseFloat(form.valuation_m) : null,
       lead_investor: form.lead_investor.trim() || 'Unknown',
       lead_tier: form.lead_tier,
       date: form.date,
       description: form.description.trim(),
-      signals: form.signals ? form.signals.split(',').map(s => s.trim()).filter(Boolean) : [],
+      signals: selectedSignals,
       iconiq_synergy: [],
       founders: [],
       competitors: [],
@@ -59,7 +78,7 @@ export default function AddDealModal({ onAdd, onClose }) {
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-h-[90vh] overflow-y-auto z-50 bg-th-surface border border-th-bd rounded-2xl shadow-2xl">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[580px] max-h-[90vh] overflow-y-auto z-50 bg-th-surface border border-th-bd rounded-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-th-bd-sub sticky top-0 bg-th-surface z-10">
           <h2 className="text-[15px] font-semibold text-th-tx">Add Deal</h2>
           <button onClick={onClose} className="text-th-tx3 hover:text-th-tx transition-colors">
@@ -70,7 +89,7 @@ export default function AddDealModal({ onAdd, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Row 1 */}
+          {/* Company + Domain */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-medium text-th-tx3 mb-1">Company *</label>
@@ -86,7 +105,7 @@ export default function AddDealModal({ onAdd, onClose }) {
             </div>
           </div>
 
-          {/* Row 2 */}
+          {/* Sector + Stage */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-medium text-th-tx3 mb-1">Sector *</label>
@@ -106,19 +125,25 @@ export default function AddDealModal({ onAdd, onClose }) {
             </div>
           </div>
 
-          {/* Row 3 */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Raise + Valuation + Lead Investor + Tier */}
+          <div className="grid grid-cols-4 gap-3">
             <div>
               <label className="block text-[11px] font-medium text-th-tx3 mb-1">Raise ($M)</label>
               <input type="number" value={form.amount_m} onChange={e => set('amount_m', e.target.value)}
                 className="w-full bg-th-hover border border-th-bd rounded-lg px-3 py-2 text-[13px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str"
-                placeholder="e.g. 50" />
+                placeholder="50" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-th-tx3 mb-1">Val. ($M)</label>
+              <input type="number" value={form.valuation_m} onChange={e => set('valuation_m', e.target.value)}
+                className="w-full bg-th-hover border border-th-bd rounded-lg px-3 py-2 text-[13px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str"
+                placeholder="500" />
             </div>
             <div>
               <label className="block text-[11px] font-medium text-th-tx3 mb-1">Lead Investor</label>
               <input value={form.lead_investor} onChange={e => set('lead_investor', e.target.value)}
                 className="w-full bg-th-hover border border-th-bd rounded-lg px-3 py-2 text-[13px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str"
-                placeholder="e.g. Sequoia" />
+                placeholder="Sequoia" />
             </div>
             <div>
               <label className="block text-[11px] font-medium text-th-tx3 mb-1">Lead Tier</label>
@@ -129,7 +154,7 @@ export default function AddDealModal({ onAdd, onClose }) {
             </div>
           </div>
 
-          {/* Row 4 */}
+          {/* Date + Source */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-medium text-th-tx3 mb-1">Date</label>
@@ -154,10 +179,45 @@ export default function AddDealModal({ onAdd, onClose }) {
 
           {/* Signals */}
           <div>
-            <label className="block text-[11px] font-medium text-th-tx3 mb-1">Signals <span className="text-th-tx4">(comma-separated)</span></label>
-            <input value={form.signals} onChange={e => set('signals', e.target.value)}
-              className="w-full bg-th-hover border border-th-bd rounded-lg px-3 py-2 text-[13px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str"
-              placeholder="e.g. Top-tier lead, Revenue acceleration, Deep Technical" />
+            <label className="block text-[11px] font-medium text-th-tx3 mb-2">
+              Signals
+              {selectedSignals.length > 0 && (
+                <span className="ml-1.5 text-th-tx4 font-normal">({selectedSignals.length} selected)</span>
+              )}
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {signals.map(s => (
+                <button
+                  key={s.label}
+                  type="button"
+                  title={s.description}
+                  onClick={() => toggleSignal(s.label)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                    selectedSignals.includes(s.label)
+                      ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800'
+                      : 'bg-th-hover text-th-tx3 border-th-bd hover:border-th-bd-str hover:text-th-tx'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={customSignalInput}
+                onChange={e => setCustomSignalInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCustomSignal())}
+                placeholder="Add custom signal..."
+                className="flex-1 bg-th-hover border border-th-bd rounded-lg px-3 py-1.5 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str"
+              />
+              <button
+                type="button"
+                onClick={handleAddCustomSignal}
+                className="px-3 py-1.5 rounded-lg border border-th-bd bg-th-hover text-[12px] text-th-tx2 hover:text-th-tx hover:border-th-bd-str transition-colors"
+              >
+                Add
+              </button>
+            </div>
           </div>
 
           {/* Notes */}
@@ -168,14 +228,13 @@ export default function AddDealModal({ onAdd, onClose }) {
               placeholder="Any context, sourcing notes, or questions..." />
           </div>
 
-          {/* Attribution note */}
           <p className="text-[11px] text-th-tx4">
-            This deal will be attributed to <span className="text-th-tx2 font-medium">{user ? displayName : 'Guest'}</span> and visible to your workspace.
+            Attributed to <span className="text-th-tx2 font-medium">{user ? displayName : 'Guest'}</span> · visible to your workspace.
           </p>
 
           {error && <p className="text-[12px] text-red-500">{error}</p>}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose}
               className="px-4 py-2 rounded-lg border border-th-bd text-[13px] text-th-tx2 hover:bg-th-hover transition-colors">
               Cancel

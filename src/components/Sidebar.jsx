@@ -21,10 +21,15 @@ export default function Sidebar({
       <aside className="w-[220px] flex-shrink-0 flex flex-col h-screen bg-th-panel border-r border-th-bd-sub">
         {/* Logo */}
         <div className="px-4 py-4 border-b border-th-bd-sub">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-th-tx rounded-sm flex items-center justify-center flex-shrink-0">
-              <span className="text-th-surface text-[10px] font-bold leading-none">JH</span>
-            </div>
+          <div className="flex items-center gap-2.5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+              <rect width="24" height="24" rx="5" fill="currentColor" className="text-th-tx"/>
+              {/* Sound wave / harmonic bars */}
+              <rect x="4" y="10" width="2.5" height="4" rx="1.25" fill="currentColor" className="text-th-surface" opacity="0.6"/>
+              <rect x="8" y="7" width="2.5" height="10" rx="1.25" fill="currentColor" className="text-th-surface"/>
+              <rect x="12" y="5" width="2.5" height="14" rx="1.25" fill="currentColor" className="text-th-surface"/>
+              <rect x="16" y="8" width="2.5" height="8" rx="1.25" fill="currentColor" className="text-th-surface" opacity="0.75"/>
+            </svg>
             <span className="text-[13px] font-semibold text-th-tx tracking-tight">Juice's Harmonic</span>
           </div>
         </div>

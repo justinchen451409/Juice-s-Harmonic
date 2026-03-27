@@ -153,6 +153,9 @@ export default function CompanyDrawer({ deal, onClose, onTrack, onPass, onNoteUp
               <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider mb-2">Key Metrics</div>
               <div className="grid grid-cols-3 gap-2">
                 <MetricCard label="Raise" value={deal.amount_m ? `$${deal.amount_m}M` : null} />
+                <MetricCard label="Valuation" value={deal.valuation_m
+                  ? (deal.valuation_m >= 1000 ? `$${(deal.valuation_m / 1000).toFixed(1)}B` : `$${deal.valuation_m}M`)
+                  : null} />
                 <MetricCard label="ARR" value={deal.arr} />
                 <MetricCard label="Headcount" value={deal.headcount ? deal.headcount.toLocaleString() : null} />
                 <MetricCard label="HC Growth" value={deal.headcount_growth} />

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ALL_TIERS, ALL_STAGES, TIER_DEFINITIONS, STAGE_DEFINITIONS } from '../lib/tiers'
+import { getAllSignals, addCustomSignal, removeCustomSignal } from '../lib/signals'
 
 const FOUNDER_SIGNALS = [
   'Top University', 'Deep Technical', 'Prior VC-backed',
@@ -115,6 +116,24 @@ function filtersEqual(a, b) {
 
 export default function FilterPanel({ open, onClose, filters, onChange, deals }) {
   const sectors = [...new Set(deals.map(d => d.sector))].sort()
+
+  const [signalList, setSignalList] = useState(() => getAllSignals())
+  const [newSignalInput, setNewSignalInput] = useState('')
+  const [showSignalManager, setShowSignalManager] = useState(false)
+
+  const handleAddSignal = () => {
+    const label = newSignalInput.trim()
+    if (!label) return
+    addCustomSignal(label)
+    setSignalList(getAllSignals())
+    setNewSignalInput('')
+  }
+
+  const handleRemoveSignal = (label) => {
+    removeCustomSignal(label)
+    setSignalList(getAllSignals())
+    onChange({ ...filters, founderSignals: filters.founderSignals.filter(s => s !== label) })
+  }
 
   const [customPresets, setCustomPresets] = useState(() => {
     try { return JSON.parse(localStorage.getItem('scout_presets') || '[]') } catch { return [] }
@@ -282,6 +301,76 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
                   onClick={() => onChange({ ...filters, founderSignals: toggle(filters.founderSignals, s) })} />
               ))}
             </div>
+          </div>
+
+          {/* Deal Signals */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Deal Signals</div>
+                <InfoTooltip text="Filter deals by investment signal tags. Hover any signal to see its definition. Add custom signals to track your own thesis criteria." />
+              </div>
+              <button
+                onClick={() => setShowSignalManager(s => !s)}
+                className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors"
+              >
+                {showSignalManager ? 'Done' : 'Manage'}
+              </button>
+            </div>
+
+            {showSignalManager ? (
+              <div className="space-y-2">
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                  {signalList.map(s => (
+                    <div key={s.label} className="flex items-start gap-2 py-1.5 border-b border-th-bd-sub last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
+                        <div className="text-[11px] text-th-tx4 leading-snug mt-0.5">{s.description}</div>
+                      </div>
+                      {s.custom && (
+                        <button
+                          onClick={() => handleRemoveSignal(s.label)}
+                          className="text-th-tx4 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                            <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <input
+                    value={newSignalInput}
+                    onChange={e => setNewSignalInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddSignal()}
+                    placeholder="New signal name..."
+                    className="flex-1 bg-th-surface border border-th-bd rounded-lg px-3 py-1.5 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str"
+                  />
+                  <button onClick={handleAddSignal} className="px-3 py-1.5 rounded-lg bg-th-tx text-th-surface text-[12px] font-medium hover:opacity-90 transition-opacity">
+                    Add
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {signalList.map(s => (
+                  <div key={s.label} className="relative group/sig">
+                    <ChipToggle
+                      label={s.label}
+                      active={filters.founderSignals.includes(s.label)}
+                      onClick={() => onChange({ ...filters, founderSignals: toggle(filters.founderSignals, s.label) })}
+                    />
+                    <div className="absolute bottom-full left-0 mb-1.5 z-50 w-56 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover/sig:block pointer-events-none">
+                      <div className="font-medium text-th-tx mb-0.5">{s.label}</div>
+                      <div>{s.description}</div>
+                      {s.custom && <div className="text-th-tx4 mt-1">Custom signal</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Pipeline Status */}

@@ -125,10 +125,10 @@ function TrackButton({ tracked, dealId, onTrack }) {
 export default function DealTable({ deals, onRowClick, onTrack, selectedDealId }) {
   return (
     <div className="flex-1 overflow-auto bg-th-bg">
-      <table className="w-full min-w-[900px] border-collapse">
+      <table className="w-full min-w-[960px] border-collapse">
         <thead className="sticky top-0 z-10">
           <tr className="bg-th-panel border-b border-th-bd-sub">
-            {['Company', 'Sector', 'Stage', 'Raise', 'Lead Investor', 'Signals', ''].map(h => (
+            {['Company', 'Sector', 'Stage', 'Raise', 'Valuation', 'Lead Investor', 'Signals', ''].map(h => (
               <th
                 key={h}
                 className="text-left px-4 py-3 text-[11px] font-medium text-th-tx4 uppercase tracking-wider whitespace-nowrap"
@@ -193,6 +193,19 @@ export default function DealTable({ deals, onRowClick, onTrack, selectedDealId }
                 <span className="text-[13px] font-medium text-th-tx">
                   {deal.amount_m ? `$${deal.amount_m}M` : '—'}
                 </span>
+              </td>
+
+              {/* Valuation */}
+              <td className="px-4 py-3">
+                {deal.valuation_m ? (
+                  <span className="text-[13px] font-medium text-th-tx">
+                    {deal.valuation_m >= 1000
+                      ? `$${(deal.valuation_m / 1000).toFixed(1)}B`
+                      : `$${deal.valuation_m}M`}
+                  </span>
+                ) : (
+                  <span className="text-[13px] text-th-tx4">—</span>
+                )}
               </td>
 
               {/* Lead Investor */}
