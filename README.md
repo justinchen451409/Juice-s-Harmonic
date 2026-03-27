@@ -1,4 +1,4 @@
-# ICONIQ Scout
+# Juice's Harmonic
 
 A deal sourcing dashboard for ICONIQ Growth. Track notable fundraises, identify portfolio synergies, and front-run deals before they come to market.
 
