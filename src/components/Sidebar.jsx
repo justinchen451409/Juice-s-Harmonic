@@ -2,6 +2,34 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import SettingsModal from './SettingsModal'
 
+function useStarred() {
+  const [starred, setStarred] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jh_starred_searches') || '[]') } catch { return [] }
+  })
+  const toggle = (name) => {
+    setStarred(prev => {
+      const next = prev.includes(name) ? prev.filter(s => s !== name) : [...prev, name]
+      localStorage.setItem('jh_starred_searches', JSON.stringify(next))
+      return next
+    })
+  }
+  return [starred, toggle]
+}
+
+function StarIcon({ filled }) {
+  return (
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+      <path
+        d="M7 1.5l1.545 3.13 3.455.502-2.5 2.437.59 3.44L7 9.35l-3.09 1.66.59-3.44L2 5.132l3.455-.502L7 1.5z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+        fill={filled ? 'currentColor' : 'none'}
+      />
+    </svg>
+  )
+}
+
 export default function Sidebar({
   savedSearches,
   activeSearch,
@@ -13,6 +41,7 @@ export default function Sidebar({
 }) {
   const { displayName, avatarUrl, isGuest } = useAuth()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [starred, toggleStar] = useStarred()
 
   const pct = totalCount > 0 ? Math.round((trackedCount / totalCount) * 100) : 0
 
@@ -69,21 +98,48 @@ export default function Sidebar({
             <div className="px-4 py-2 text-[12px] text-th-tx4 leading-relaxed">
               Ask CJ knows your full pipeline, ICONIQ's investment thesis, and ISP VII portfolio data.
             </div>
-          ) : (
-            savedSearches.map(search => (
-              <button
-                key={search}
-                onClick={() => onSearchSelect(search)}
-                className={`w-full text-left px-4 py-1.5 text-[13px] transition-colors duration-100 ${
-                  activeSearch === search && activeTab === 'scout'
-                    ? 'bg-th-hover text-th-tx font-medium'
-                    : 'text-th-tx2 hover:text-th-tx hover:bg-th-hover'
-                }`}
-              >
-                {search}
-              </button>
-            ))
-          )}
+          ) : (() => {
+            const starredSearches = savedSearches.filter(s => starred.includes(s))
+            const otherSearches = savedSearches.filter(s => !starred.includes(s))
+            const renderSearch = (search) => (
+              <div key={search} className="group/search flex items-center">
+                <button
+                  onClick={() => onSearchSelect(search)}
+                  className={`flex-1 text-left px-4 py-1.5 text-[13px] transition-colors duration-100 truncate ${
+                    activeSearch === search && activeTab === 'scout'
+                      ? 'text-th-tx font-medium'
+                      : 'text-th-tx2 hover:text-th-tx'
+                  } ${activeSearch === search && activeTab === 'scout' ? 'bg-th-hover' : 'hover:bg-th-hover'}`}
+                >
+                  {search}
+                </button>
+                <button
+                  onClick={() => toggleStar(search)}
+                  className={`pr-3 flex-shrink-0 transition-colors ${
+                    starred.includes(search)
+                      ? 'text-amber-400 hover:text-amber-500'
+                      : 'text-transparent group-hover/search:text-th-bd-str hover:!text-th-tx3'
+                  }`}
+                  title={starred.includes(search) ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <StarIcon filled={starred.includes(search)} />
+                </button>
+              </div>
+            )
+            return (
+              <>
+                {starredSearches.length > 0 && (
+                  <>
+                    <div className="px-4 mb-1 mt-1 text-[10px] font-medium text-th-tx4 uppercase tracking-wider">Favorites</div>
+                    {starredSearches.map(renderSearch)}
+                    <div className="mx-4 my-2 border-t border-th-bd-sub" />
+                    <div className="px-4 mb-1 text-[10px] font-medium text-th-tx4 uppercase tracking-wider">All</div>
+                  </>
+                )}
+                {otherSearches.map(renderSearch)}
+              </>
+            )
+          })()}
         </div>
 
         {/* Bottom nav */}
