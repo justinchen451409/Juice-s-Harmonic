@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { THESIS_SYSTEM_PROMPT } from '../lib/portfolio'
 import { useAuth } from '../contexts/AuthContext'
+import { buildRichContextPrompt } from '../lib/richContext'
 
 const SUGGESTED = [
   'Series B+ AI companies with Databricks or Anthropic synergy',
@@ -40,12 +41,17 @@ async function askClaude(messages, deals, crmNotes = []) {
       ).join('\n\n')}`
     : ''
 
+  const richContext = buildRichContextPrompt()
+  const richContextSection = richContext
+    ? `\n\nSIGNAL DEEP CONTEXT (user-defined thesis documentation — treat this as ground truth for how to evaluate these signals):\n${richContext}`
+    : ''
+
   const systemPrompt = `${THESIS_SYSTEM_PROMPT}
 
 You are CJ, an AI assistant helping an ICONIQ Growth associate analyze deal flow. You have access to their current deal pipeline${crmNotes.length > 0 ? ' and their private CRM notes' : ''}:
 
 CURRENT DEALS:
-${dealsContext}${crmContext}
+${dealsContext}${crmContext}${richContextSection}
 
 When answering:
 - Be direct and specific. No filler. Write like a growth equity analyst.

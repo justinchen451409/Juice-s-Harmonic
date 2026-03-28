@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { TIER_DEFINITIONS, STAGE_DEFINITIONS } from '../lib/tiers'
 import { getAllSignals, addCustomSignal, removeCustomSignal, editSignalDescription, resetSignalDescription } from '../lib/signals'
+import { getAllFounderSignals, addCustomFounderSignal, removeCustomFounderSignal, editFounderSignalDescription, resetFounderSignalDescription, getCustomFounderSignals } from '../lib/founderSignals'
+import { hasRichContext } from '../lib/richContext'
+import RichContextModal from './RichContextModal'
 import {
   getAllSectors, getCustomSectors, addCustomSector, removeCustomSector,
   getAllStageLabels, getCustomStages, addCustomStage, removeCustomStage,
   getAllTierLabels, getCustomTiers, addCustomTier, removeCustomTier,
 } from '../lib/filterConfig'
 
-const FOUNDER_SIGNALS = [
-  'Top University', 'Deep Technical', 'Prior VC-backed',
-  'Seasoned Founder', 'Seasoned Operator', 'Prior Exit', 'YC Backed',
-]
 
 const PIPELINE_OPTIONS = [
   { value: 'tracked', label: 'Tracked' },
@@ -143,6 +142,46 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
     if (editingSignal === label) { setEditingSignal(null); setEditingDesc('') }
   }
 
+  // Rich context modal
+  const [richContextSignal, setRichContextSignal] = useState(null)
+
+  // Founder signals manage
+  const [founderSignalList, setFounderSignalList] = useState(() => getAllFounderSignals())
+  const [newFounderSignalInput, setNewFounderSignalInput] = useState('')
+  const [showFounderSignalManager, setShowFounderSignalManager] = useState(false)
+  const [editingFounderSignal, setEditingFounderSignal] = useState(null)
+  const [editingFounderDesc, setEditingFounderDesc] = useState('')
+  const customFounderSignals = getCustomFounderSignals()
+
+  const handleStartFounderEdit = (signal) => {
+    setEditingFounderSignal(signal.label)
+    setEditingFounderDesc(signal.description)
+  }
+  const handleSaveFounderEdit = () => {
+    if (!editingFounderSignal) return
+    editFounderSignalDescription(editingFounderSignal, editingFounderDesc.trim())
+    setFounderSignalList(getAllFounderSignals())
+    setEditingFounderSignal(null)
+    setEditingFounderDesc('')
+  }
+  const handleResetFounderDesc = (label) => {
+    resetFounderSignalDescription(label)
+    setFounderSignalList(getAllFounderSignals())
+    if (editingFounderSignal === label) { setEditingFounderSignal(null); setEditingFounderDesc('') }
+  }
+  const handleRemoveFounderSignal = (label) => {
+    removeCustomFounderSignal(label)
+    setFounderSignalList(getAllFounderSignals())
+    onChange({ ...filters, founderSignals: filters.founderSignals.filter(s => s !== label) })
+  }
+  const handleAddFounderSignal = () => {
+    const label = newFounderSignalInput.trim()
+    if (!label) return
+    addCustomFounderSignal(label)
+    setFounderSignalList(getAllFounderSignals())
+    setNewFounderSignalInput('')
+  }
+
   const [sectorList, setSectorList] = useState(() => getAllSectors())
   const [newSectorInput, setNewSectorInput] = useState('')
   const [showSectorManager, setShowSectorManager] = useState(false)
@@ -215,6 +254,13 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
   return (
     <>
+      {richContextSignal && (
+        <RichContextModal
+          signalLabel={richContextSignal}
+          onClose={() => setRichContextSignal(null)}
+        />
+      )}
+
       {open && <div className="fixed inset-0 z-30 bg-black/20 dark:bg-black/40" onClick={onClose} />}
 
       <div className={`fixed top-0 right-0 h-full w-[340px] z-40 bg-th-panel border-l border-th-bd-sub flex flex-col transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
@@ -435,16 +481,88 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
           {/* Founder Signals */}
           <div>
-            <div className="flex items-center mb-2">
-              <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Founder Signals</div>
-              <InfoTooltip text="Filter by founder background. 'Deep Technical' = AI lab / PhD / top research org. 'Prior Exit' = sold a company. 'Top University' = MIT, Stanford, CMU, Oxford, etc. Signal quality varies — context matters." />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <div className="text-[11px] font-medium text-th-tx3 uppercase tracking-wider">Founder Signals</div>
+                <InfoTooltip text="Filter by founder background quality. Hover any chip for definition. Use Manage to edit definitions or add custom signals." />
+              </div>
+              <button onClick={() => setShowFounderSignalManager(s => !s)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">
+                {showFounderSignalManager ? 'Done' : 'Manage'}
+              </button>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {FOUNDER_SIGNALS.map(s => (
-                <ChipToggle key={s} label={s} active={filters.founderSignals.includes(s)}
-                  onClick={() => onChange({ ...filters, founderSignals: toggle(filters.founderSignals, s) })} />
-              ))}
-            </div>
+            {showFounderSignalManager ? (
+              <div className="space-y-2">
+                <div className="space-y-0 max-h-[420px] overflow-y-auto pr-1">
+                  {founderSignalList.map(s => (
+                    <div key={s.label} className="py-2 border-b border-th-bd-sub last:border-0">
+                      {editingFounderSignal === s.label ? (
+                        <div className="space-y-1.5">
+                          <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
+                          <textarea
+                            value={editingFounderDesc}
+                            onChange={e => setEditingFounderDesc(e.target.value)}
+                            rows={6}
+                            autoFocus
+                            className="w-full bg-th-surface border border-th-bd-str rounded-lg px-2.5 py-2 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none resize-y"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button onClick={handleSaveFounderEdit} className="px-2.5 py-1 rounded-md bg-th-tx text-th-surface text-[11px] font-medium hover:opacity-90 transition-opacity">Save</button>
+                            <button onClick={() => { setEditingFounderSignal(null); setEditingFounderDesc('') }} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">Cancel</button>
+                            {!s.custom && (
+                              <button onClick={() => handleResetFounderDesc(s.label)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors ml-auto">Reset to default</button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
+                            <div className="text-[11px] text-th-tx4 leading-snug mt-0.5">{s.description}</div>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                            <button onClick={() => handleStartFounderEdit(s)} className="text-th-tx4 hover:text-th-tx2 transition-colors" title="Edit definition">
+                              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                                <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            {s.custom && (
+                              <button onClick={() => handleRemoveFounderSignal(s.label)} className="text-th-tx4 hover:text-red-500 transition-colors" title="Remove signal">
+                                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                                  <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <input
+                    value={newFounderSignalInput}
+                    onChange={e => setNewFounderSignalInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddFounderSignal()}
+                    placeholder="New founder signal..."
+                    className="flex-1 bg-th-surface border border-th-bd rounded-lg px-3 py-1.5 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none focus:border-th-bd-str"
+                  />
+                  <button onClick={handleAddFounderSignal} className="px-3 py-1.5 rounded-lg bg-th-tx text-th-surface text-[12px] font-medium hover:opacity-90 transition-opacity">Add</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {founderSignalList.map(s => (
+                  <div key={s.label} className="relative group">
+                    <ChipToggle label={s.label} active={filters.founderSignals.includes(s.label)}
+                      onClick={() => onChange({ ...filters, founderSignals: toggle(filters.founderSignals, s.label) })} />
+                    <div className="absolute bottom-full left-0 mb-1.5 z-50 w-56 bg-th-surface border border-th-bd rounded-lg shadow-lg px-3 py-2 text-[11px] text-th-tx2 leading-relaxed hidden group-hover:block pointer-events-none">
+                      <div className="font-medium text-th-tx mb-0.5">{s.label}</div>
+                      <div>{s.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Deal Signals */}
@@ -477,18 +595,35 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
                             autoFocus
                             className="w-full bg-th-surface border border-th-bd-str rounded-lg px-2.5 py-2 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none resize-y"
                           />
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <button onClick={handleSaveEdit} className="px-2.5 py-1 rounded-md bg-th-tx text-th-surface text-[11px] font-medium hover:opacity-90 transition-opacity">Save</button>
                             <button onClick={() => { setEditingSignal(null); setEditingDesc('') }} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">Cancel</button>
                             {!s.custom && (
-                              <button onClick={() => handleResetDesc(s.label)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors ml-auto">Reset to default</button>
+                              <button onClick={() => handleResetDesc(s.label)} className="text-[11px] text-th-tx4 hover:text-th-tx2 transition-colors">Reset to default</button>
                             )}
+                            <button
+                              onClick={() => setRichContextSignal(s.label)}
+                              className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-md border border-th-bd text-[11px] text-th-tx2 hover:border-th-bd-str hover:text-th-tx transition-colors"
+                              title="Add deep context — paste docs, links, or files for Ask CJ"
+                            >
+                              {hasRichContext(s.label) ? (
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block mr-0.5" />
+                              ) : (
+                                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                                  <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                </svg>
+                              )}
+                              Deep context
+                            </button>
                           </div>
                         </div>
                       ) : (
                         <div className="flex items-start gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="text-[12px] font-medium text-th-tx">{s.label}</div>
+                              {hasRichContext(s.label) && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" title="Has deep context" />}
+                            </div>
                             <div className="text-[11px] text-th-tx4 leading-snug mt-0.5">{s.description}</div>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
