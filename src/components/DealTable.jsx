@@ -52,13 +52,13 @@ function CompanyAvatar({ domain, company }) {
         src={`https://logo.clearbit.com/${domain}`}
         alt={company}
         onError={() => setImgError(true)}
-        className="w-7 h-7 rounded bg-th-surface object-contain flex-shrink-0 border border-th-bd-sub"
+        className="w-9 h-9 rounded-lg bg-th-surface object-contain flex-shrink-0 border border-th-bd-sub"
       />
     )
   }
 
   return (
-    <div className="w-7 h-7 rounded bg-th-active flex items-center justify-center flex-shrink-0 text-[11px] font-semibold text-th-tx3">
+    <div className="w-9 h-9 rounded-lg bg-th-active flex items-center justify-center flex-shrink-0 text-[12px] font-semibold text-th-tx3">
       {company.slice(0, 2).toUpperCase()}
     </div>
   )
@@ -125,10 +125,10 @@ function TrackButton({ tracked, dealId, onTrack }) {
 export default function DealTable({ deals, onRowClick, onTrack, selectedDealId }) {
   return (
     <div className="flex-1 overflow-auto bg-th-bg">
-      <table className="w-full min-w-[960px] border-collapse">
+      <table className="w-full min-w-[1100px] border-collapse">
         <thead className="sticky top-0 z-10">
           <tr className="bg-th-panel border-b border-th-bd-sub">
-            {['Company', 'Sector', 'Stage', 'Raise', 'Valuation', 'Lead Investor', 'Signals', ''].map(h => (
+            {['Company', 'Sector', 'Stage', 'Raise', 'Valuation', 'Lead Investor', 'Signals', 'Overview', ''].map(h => (
               <th
                 key={h}
                 className="text-left px-4 py-3 text-[11px] font-medium text-th-tx4 uppercase tracking-wider whitespace-nowrap"
@@ -226,6 +226,15 @@ export default function DealTable({ deals, onRowClick, onTrack, selectedDealId }
                     <span className="text-[10px] text-th-tx4 self-center">+{deal.signals.length - 3}</span>
                   )}
                 </div>
+              </td>
+
+              {/* Overview */}
+              <td className="px-4 py-3 max-w-[240px]">
+                {deal.description ? (
+                  <p className="text-[11px] text-th-tx3 leading-relaxed line-clamp-2">{deal.description}</p>
+                ) : (
+                  <span className="text-[11px] text-th-tx4">—</span>
+                )}
               </td>
 
               {/* Track */}

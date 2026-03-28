@@ -464,7 +464,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
 
             {showSignalManager ? (
               <div className="space-y-2">
-                <div className="space-y-0 max-h-64 overflow-y-auto pr-1">
+                <div className="space-y-0 max-h-[420px] overflow-y-auto pr-1">
                   {signalList.map(s => (
                     <div key={s.label} className="py-2 border-b border-th-bd-sub last:border-0">
                       {editingSignal === s.label ? (
@@ -473,9 +473,9 @@ export default function FilterPanel({ open, onClose, filters, onChange, deals })
                           <textarea
                             value={editingDesc}
                             onChange={e => setEditingDesc(e.target.value)}
-                            rows={3}
+                            rows={6}
                             autoFocus
-                            className="w-full bg-th-surface border border-th-bd-str rounded-lg px-2.5 py-2 text-[11px] text-th-tx placeholder-th-tx4 focus:outline-none resize-none"
+                            className="w-full bg-th-surface border border-th-bd-str rounded-lg px-2.5 py-2 text-[12px] text-th-tx placeholder-th-tx4 focus:outline-none resize-y"
                           />
                           <div className="flex items-center gap-2">
                             <button onClick={handleSaveEdit} className="px-2.5 py-1 rounded-md bg-th-tx text-th-surface text-[11px] font-medium hover:opacity-90 transition-opacity">Save</button>
