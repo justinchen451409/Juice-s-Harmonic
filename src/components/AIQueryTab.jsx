@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { THESIS_SYSTEM_PROMPT } from '../lib/portfolio'
 import { useAuth } from '../contexts/AuthContext'
 import { buildRichContextPrompt } from '../lib/richContext'
+import { buildKnowledgePrompt } from '../lib/knowledge'
+import KnowledgePanel from './KnowledgePanel'
 
 const SUGGESTED = [
   'Series B+ AI companies with Databricks or Anthropic synergy',
@@ -22,8 +24,8 @@ function SparkleIcon({ size = 16 }) {
 }
 
 async function askClaude(messages, deals, crmNotes = []) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('Add VITE_ANTHROPIC_API_KEY to your .env file to use Ask CJ.')
+  const apiKey = localStorage.getItem('jh_api_key') || import.meta.env.VITE_ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('Add your Claude API key in Settings to use Ask CJ.')
 
   const dealsContext = JSON.stringify(
     deals.map(d => ({
@@ -46,12 +48,14 @@ async function askClaude(messages, deals, crmNotes = []) {
     ? `\n\nSIGNAL DEEP CONTEXT (user-defined thesis documentation — treat this as ground truth for how to evaluate these signals):\n${richContext}`
     : ''
 
+  const knowledgeContext = buildKnowledgePrompt()
+
   const systemPrompt = `${THESIS_SYSTEM_PROMPT}
 
 You are CJ, an AI assistant helping an ICONIQ Growth associate analyze deal flow. You have access to their current deal pipeline${crmNotes.length > 0 ? ' and their private CRM notes' : ''}:
 
 CURRENT DEALS:
-${dealsContext}${crmContext}${richContextSection}
+${dealsContext}${crmContext}${richContextSection}${knowledgeContext}
 
 When answering:
 - Be direct and specific. No filler. Write like a growth equity analyst.
@@ -147,6 +151,8 @@ export default function AIQueryTab({ deals, onApplyFilter, crmNotes = [] }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showKnowledge, setShowKnowledge] = useState(false)
+  const [knowledgeTick, setKnowledgeTick] = useState(0)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
 
@@ -193,8 +199,14 @@ export default function AIQueryTab({ deals, onApplyFilter, crmNotes = [] }) {
 
   const isEmpty = messages.length === 0
 
+  const knowledgeCount = (() => {
+    try { return JSON.parse(localStorage.getItem('jh_knowledge') || '[]').length } catch { return 0 }
+  })()
+
   return (
-    <div className="flex flex-col h-full bg-th-bg">
+    <div className="flex h-full bg-th-bg overflow-hidden">
+      {/* Main chat column */}
+      <div className="flex flex-col flex-1 min-w-0">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
         {isEmpty ? (
@@ -279,8 +291,21 @@ export default function AIQueryTab({ deals, onApplyFilter, crmNotes = [] }) {
               className="w-full bg-transparent px-4 pt-3.5 pb-12 text-[14px] text-th-tx placeholder-th-tx4 focus:outline-none resize-none leading-relaxed"
               style={{ minHeight: '52px', maxHeight: '200px' }}
             />
-            <div className="absolute bottom-3 left-4 right-3 flex items-center justify-between pointer-events-none">
-              <span className="text-[11px] text-th-tx4">Press Enter to send · Shift+Enter for new line</span>
+            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+              <button
+                onClick={() => setShowKnowledge(s => !s)}
+                title="Knowledge & Skills"
+                className={`pointer-events-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                  showKnowledge
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                    : 'text-th-tx4 hover:text-th-tx2 hover:bg-th-hover'
+                }`}
+              >
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1l1.4 3.3L12 5l-3 2.8.7 3.7L7 10l-2.7 1.5.7-3.7L2 5l3.6-.7L7 1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" fill={showKnowledge ? 'currentColor' : 'none'}/>
+                </svg>
+                {knowledgeCount > 0 ? `${knowledgeCount} in context` : 'Knowledge'}
+              </button>
               <button
                 onClick={() => handleSubmit()}
                 disabled={loading || !input.trim()}
@@ -299,6 +324,17 @@ export default function AIQueryTab({ deals, onApplyFilter, crmNotes = [] }) {
           )}
         </div>
       </div>
+      </div>{/* end main chat column */}
+
+      {/* Knowledge panel */}
+      {showKnowledge && (
+        <KnowledgePanel
+          open={showKnowledge}
+          onToggle={() => setShowKnowledge(s => !s)}
+          onInvokeSkill={(prompt) => { setInput(prompt); setShowKnowledge(false); textareaRef.current?.focus() }}
+          onKnowledgeChange={() => setKnowledgeTick(t => t + 1)}
+        />
+      )}
     </div>
   )
 }
